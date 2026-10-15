@@ -16,7 +16,8 @@ irm https://raw.githubusercontent.com/limeiwang/credwatch/main/install.ps1 -OutF
 
 ## 安装
 ```bash
-pip install .          # 或：pipx install .
+pipx install git+https://github.com/limeiwang/credwatch   # 或：pip install .
+credwatch setup        # 跟着提示走，每一步都能回车跳过
 credwatch              # 查看状态
 ```
 
@@ -52,6 +53,9 @@ credwatch init              # 生成 ~/.credwatch/config.toml
 
 ## 告警渠道
 默认开启电脑系统通知。手机推送运行 `credwatch setup` 选择飞书、企业微信、钉钉、Telegram、Slack 或通用 webhook。新增渠道只需在 `notify.CHANNELS` 加一项，向导自动出现该选项；新增平台在 adapter 里声明 `LABEL / TOOL / login_cmd()`，向导自动支持登录。阶梯提醒：剩 7 天、3 天、1 天各提醒一次，已失效的每 24 小时提醒一次，不刷屏。
+
+## 到期提醒
+API Key、证书、域名这类工具查不到到期日的东西，用 `credwatch add "名字" 日期` 记一笔（或在 `credwatch setup` 里加）。它们单独显示在“⏰ 你设的提醒”下，只按日期提醒、不去验证密钥，也不计入“N 项授权正常”。同名重复添加会自动更新，不会出现两条。
 
 ## 像 Token 余量一样常驻显示
 Claude Code 的 `~/.claude/settings.json`：
