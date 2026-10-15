@@ -112,6 +112,17 @@ class T(unittest.TestCase):
             gha.API = old
         self.assertEqual((c.status, c.account, c.scopes), (OK, "viagh", ["repo", "gist"]))
 
+    def test_reminders_shown_separately(self):
+        far = (dt.date.today() + dt.timedelta(days=76)).isoformat()
+        creds = engine.check_all({"custom": [{"name": "OpenAI API Key", "expires_at": far}]})
+        out = report.terminal(creds)
+        table, _, rems = out.partition("你设的提醒")
+        self.assertNotIn("OpenAI", table)          # 不混进“已检测的授权”表格
+        self.assertIn("OpenAI API Key：" + far, rems)
+        n = sum(1 for c in creds if c.kind != "reminder")  # 只数真检测到的授权
+        self.assertNotIn(f"{n + 1} 项", out.splitlines()[0])
+        self.assertNotIn(f"{n + 1} 项", report.statusline([c.to_dict() for c in creds]))
+
     def test_preflight(self):
         os.environ["GITHUB_TOKEN"] = "ghp_expiring"  # 剩 3 天
         from credwatch.core import parse_duration
