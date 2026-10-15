@@ -19,7 +19,7 @@ def check(items: list[dict]) -> list[Credential]:
     creds = []
     for it in items:
         cred = Credential(platform=it.get("platform", "custom"), name=it["name"],
-                          kind=it.get("kind", "custom"), renew_hint=it.get("renew", ""),
+                          kind=it.get("kind", "custom" if it.get("check") else "reminder"), renew_hint=it.get("renew", ""),
                           auto_renewable=bool(it.get("auto")) and bool(it.get("renew")),
                           expires_at=parse_time(it.get("expires_at")))
         if it.get("check"):
