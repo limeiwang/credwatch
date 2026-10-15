@@ -22,7 +22,8 @@ auto_renew = true        # watch 模式下自动续期可续的凭证
 platforms = ["github", "cloudflare"]
 
 [notify]
-# 任选其一或多个，留空则只在终端输出
+desktop = true           # 电脑系统弹窗提醒（默认开启，零配置）
+# 想推到手机：运行 credwatch setup 按提示粘贴地址即可，不用手改这里
 # feishu_webhook = "https://open.feishu.cn/open-apis/bot/v2/hook/xxx"
 # dingtalk_webhook = "https://oapi.dingtalk.com/robot/send?access_token=xxx"
 # wecom_webhook = "https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key=xxx"
