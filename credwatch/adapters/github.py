@@ -13,6 +13,15 @@ import time
 
 from ..core import EXPIRED, MISSING, OK, UNKNOWN, Credential, http_json, is_headless, parse_time, run
 
+LABEL = "GitHub"
+TOOL = "gh"
+INSTALL_HINT = "winget install GitHub.cli（Windows）/ brew install gh（macOS）"
+
+
+def login_cmd() -> list[str]:
+    return ["gh", "auth", "login", "--hostname", "github.com", "--web", "--git-protocol", "https"]
+
+
 API = os.environ.get("CREDWATCH_GITHUB_API", "https://api.github.com")
 
 
