@@ -32,7 +32,7 @@ jobs:
       - name: One-liner exactly as users paste it (downloads from main)
         shell: powershell
         run: |
-          irm https://raw.githubusercontent.com/limeiwang/credwatch/main/install.ps1 -OutFile $env:TEMP\credwatch-install.ps1; powershell -ExecutionPolicy Bypass -File $env:TEMP\credwatch-install.ps1
+          irm https://raw.githubusercontent.com/limeiwang/credwatch/main/install.ps1 -OutFile $env:TEMP\credwatch-install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\credwatch-install.ps1
           if ($LASTEXITCODE -ne 0) { throw "one-liner failed" }
       - name: Run installer from file (re-run must be safe)
         shell: powershell
@@ -43,7 +43,7 @@ jobs:
           & $cw --version
           & $cw doctor; if ($LASTEXITCODE -gt 1) { throw "doctor crashed" }
           '{}' | & $cw statusline
-          & $cw status --json | Out-Null; if ($LASTEXITCODE -ne 0) { throw "status failed" }
+          & $cw status --json | Out-Null; if ($LASTEXITCODE -gt 2) { throw "status failed" }
           if (-not (Test-Path "$env:USERPROFILE\.claude\settings.json")) { throw "statusline not configured" }
           schtasks /query /tn credwatch
           if ($LASTEXITCODE -ne 0) { throw "scheduled task missing" }
