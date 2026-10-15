@@ -3,6 +3,7 @@ import datetime as dt, json, os, stat, sys, threading, tempfile, unittest
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from pathlib import Path
 
+os.environ["CREDWATCH_DESKTOP"] = "0"  # 测试里不弹系统通知
 os.environ["NO_PROXY"] = os.environ["no_proxy"] = "127.0.0.1,localhost"
 TMP = Path(tempfile.mkdtemp())
 os.environ["CREDWATCH_HOME"] = str(TMP / "home")
@@ -122,6 +123,64 @@ class T(unittest.TestCase):
         n = sum(1 for c in creds if c.kind != "reminder")  # 只数真检测到的授权
         self.assertNotIn(f"{n + 1} 项", out.splitlines()[0])
         self.assertNotIn(f"{n + 1} 项", report.statusline([c.to_dict() for c in creds]))
+
+    def test_config_edits_are_safe(self):
+        from credwatch import configfile
+        engine.CONFIG.unlink(missing_ok=True)
+        engine.load_config()
+        configfile.add_custom("OpenAI API Key", expires_at="2026-12-31")
+        configfile.add_custom("OpenAI API Key", expires_at="2027-01-31")   # 重复添加 → 替换
+        configfile.set_key("notify", "feishu_webhook", "https://open.feishu.cn/x")  # 文件末尾有 [[custom]] 也要写进 [notify]
+        configfile.set_key("notify", "feishu_webhook", "https://open.feishu.cn/y")
+        cfg = engine.load_config()
+        self.assertEqual(cfg["notify"]["feishu_webhook"], "https://open.feishu.cn/y")
+        self.assertEqual([c["expires_at"] for c in cfg["custom"]], ["2027-01-31"])
+        self.assertTrue(cfg["notify"]["desktop"])
+        self.assertEqual(configfile.remove_custom("OpenAI API Key"), 1)
+        self.assertNotIn("custom", engine.load_config())
+        engine.CONFIG.unlink()
+
+    def test_duplicate_custom_shown_once(self):
+        cfg = {"custom": [{"name": "A", "expires_at": "2099-01-01"}, {"name": "A", "expires_at": "2099-01-01"}]}
+        self.assertEqual(sum(1 for c in engine.check_all(cfg) if c.name == "A"), 1)
+
+    def test_parse_date(self):
+        from credwatch.wizard import parse_date
+        self.assertEqual(parse_date("2026/12/31"), dt.date(2026, 12, 31))
+        self.assertEqual(parse_date("90"), dt.date.today() + dt.timedelta(days=90))
+        self.assertEqual(parse_date("90天"), dt.date.today() + dt.timedelta(days=90))
+        self.assertIsNone(parse_date("明年"))
+
+    def test_setup_wizard_end_to_end(self):
+        import builtins, io, contextlib
+        from credwatch import wizard as setup
+        got = []
+        class H(BaseHTTPRequestHandler):
+            def do_POST(self):
+                got.append(json.loads(self.rfile.read(int(self.headers["Content-Length"]))))
+                self.send_response(200); self.end_headers(); self.wfile.write(b'{"code":0}')
+            def log_message(self, *a): pass
+        hook = HTTPServer(("127.0.0.1", 0), H); threading.Thread(target=hook.serve_forever, daemon=True).start()
+        engine.CONFIG.unlink(missing_ok=True)
+        answers = iter(["1", f"http://127.0.0.1:{hook.server_port}/hook",   # 选飞书、粘贴地址
+                        "y", "Claude API Key", "明年", "2026-12-31", "", "n"])  # 加一条提醒（先输错日期）
+        old_in, old_tty = builtins.input, sys.stdin.isatty
+        builtins.input = lambda *_: next(answers); sys.stdin.isatty = lambda: True
+        try:
+            buf = io.StringIO()
+            with contextlib.redirect_stdout(buf):
+                setup.run()
+        finally:
+            builtins.input, sys.stdin.isatty = old_in, old_tty; hook.shutdown()
+        out = buf.getvalue()
+        self.assertIn("GitHub 已登录", out)
+        self.assertIn("飞书 已接入", out)
+        self.assertIn("没看懂这个日期", out)
+        self.assertEqual(len(got), 1)
+        cfg = engine.load_config()
+        self.assertTrue(cfg["notify"]["feishu_webhook"].endswith("/hook"))
+        self.assertEqual(cfg["custom"][0]["name"], "Claude API Key")
+        engine.CONFIG.unlink()
 
     def test_preflight(self):
         os.environ["GITHUB_TOKEN"] = "ghp_expiring"  # 剩 3 天
