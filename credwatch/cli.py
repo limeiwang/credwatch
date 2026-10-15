@@ -11,8 +11,12 @@ from . import __version__, engine, report
 
 
 def main(argv=None) -> int:
-    if hasattr(sys.stdout, "reconfigure"):
-        sys.stdout.reconfigure(encoding="utf-8")
+    for stream in (sys.stdin, sys.stdout, sys.stderr):  # Windows 默认 GBK，统一成 UTF-8
+        if hasattr(stream, "reconfigure"):
+            try:
+                stream.reconfigure(encoding="utf-8", errors="replace")
+            except Exception:
+                pass
     p = argparse.ArgumentParser(prog="credwatch", description="AI bot 的 CLI 授权到期看板与自动续期")
     p.add_argument("--version", action="version", version=__version__)
     sub = p.add_subparsers(dest="cmd")
