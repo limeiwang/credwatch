@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "credwatch"
-version = "0.2.0"
+version = "0.3.0"
 description = "AI bot 的 CLI 授权到期看板、预警与自动续期（GitHub / Cloudflare / 自定义），自带 MCP 服务器"
 requires-python = ">=3.11"
 dependencies = []
