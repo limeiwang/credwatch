@@ -24,3 +24,21 @@ jobs:
           credwatch --help
           credwatch preflight --for 1h || true
           echo '{}' | credwatch statusline
+
+  windows-install:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run one-click installer (installs from main branch)
+        shell: powershell
+        run: |
+          ./install.ps1
+          $cw = Join-Path $env:USERPROFILE ".local\bin\credwatch.exe"
+          if (-not (Test-Path $cw)) { throw "credwatch.exe missing" }
+          & $cw --version
+          & $cw doctor; if ($LASTEXITCODE -gt 1) { throw "doctor crashed" }
+          '{}' | & $cw statusline
+          & $cw status --json | Out-Null; if ($LASTEXITCODE -ne 0) { throw "status failed" }
+          if (-not (Test-Path "$env:USERPROFILE\.claude\settings.json")) { throw "statusline not configured" }
+          schtasks /query /tn credwatch
+          if ($LASTEXITCODE -ne 0) { throw "scheduled task missing" }
