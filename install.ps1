@@ -15,7 +15,12 @@ function Refresh-Path {
 # ---------- 1. Python ----------
 Step 1 "检查 Python 3.11+"
 function Find-Python {
-    foreach ($c in @(@("py", "-3"), @("python"), @("python3"))) {
+    $cands = @(@("py", "-3"), @("python"), @("python3"))
+    foreach ($d in @("$env:LOCALAPPDATA\Programs\Python\Python313", "$env:LOCALAPPDATA\Programs\Python\Python312",
+                     "$env:LOCALAPPDATA\Programs\Python\Python311", "C:\Program Files\Python313", "C:\Program Files\Python312")) {
+        if (Test-Path "$d\python.exe") { $cands += ,@("$d\python.exe") }
+    }
+    foreach ($c in $cands) {
         $exe = Get-Command $c[0] -ErrorAction SilentlyContinue
         if (-not $exe -or $exe.Source -like "*WindowsApps*") { continue }  # 跳过应用商店占位符
         $args_ = @($c | Select-Object -Skip 1)
@@ -28,10 +33,30 @@ function Find-Python {
 }
 $py = Find-Python
 if (-not $py) {
-    Warn "没找到 Python 3.11+，正在用 winget 安装 Python 3.12（可能弹出确认框）"
-    winget install -e --id Python.Python.3.12 --accept-package-agreements --accept-source-agreements --silent
-    Refresh-Path
-    $py = Find-Python
+    Warn "没找到 Python 3.11+，正在自动安装 Python 3.12"
+    if (Get-Command winget -ErrorAction SilentlyContinue) {
+        winget install -e --id Python.Python.3.12 --source winget --scope user --accept-package-agreements --accept-source-agreements --silent
+        Refresh-Path
+        $py = Find-Python
+    }
+    if (-not $py) {
+        Warn "winget 不可用，改为直接下载官方安装包（先试国内镜像，再试 python.org）"
+        $exeFile = Join-Path $env:TEMP "python-3.12.7-amd64.exe"
+        [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+        foreach ($u in @("https://registry.npmmirror.com/-/binary/python/3.12.7/python-3.12.7-amd64.exe",
+                         "https://www.python.org/ftp/python/3.12.7/python-3.12.7-amd64.exe")) {
+            try {
+                Invoke-WebRequest $u -OutFile $exeFile -UseBasicParsing -TimeoutSec 300
+                if ((Get-Item $exeFile).Length -gt 10MB) { break }
+            } catch { Warn "下载失败：$u" }
+        }
+        if (Test-Path $exeFile) {
+            Write-Host "  ..  正在静默安装 Python（约 1 分钟）"
+            Start-Process $exeFile -ArgumentList "/quiet InstallAllUsers=0 PrependPath=1 Include_launcher=1" -Wait
+            Refresh-Path
+            $py = Find-Python
+        }
+    }
     if (-not $py) { throw "Python 安装后仍找不到。请到 python.org 安装 3.12，勾选 Add to PATH，再重新运行本脚本。" }
 }
 $pyArgs = @($py | Select-Object -Skip 1)
@@ -39,9 +64,18 @@ Ok ("Python " + (& $py[0] @pyArgs -c "import sys;print(sys.version.split()[0])")
 
 # ---------- 2. 安装 credwatch ----------
 Step 2 "安装 credwatch"
-& $py[0] @pyArgs -m pip install --user --quiet --upgrade pipx
+$mirror = "https://pypi.tuna.tsinghua.edu.cn/simple"
+& $py[0] @pyArgs -m pip install --user --quiet --upgrade --timeout 20 pipx
+if ($LASTEXITCODE -ne 0) {
+    Warn "PyPI 连接慢，改用清华镜像"
+    & $py[0] @pyArgs -m pip install --user --quiet --upgrade -i $mirror pipx
+}
 & $py[0] @pyArgs -m pipx ensurepath | Out-Null
-& $py[0] @pyArgs -m pipx install --force "https://github.com/limeiwang/credwatch/archive/refs/heads/main.zip" | Out-Null
+$pkg = "https://github.com/limeiwang/credwatch/archive/refs/heads/main.zip"
+& $py[0] @pyArgs -m pipx install --force $pkg | Out-Null
+if ($LASTEXITCODE -ne 0) {
+    & $py[0] @pyArgs -m pipx install --force --pip-args="-i $mirror" $pkg | Out-Null
+}
 Refresh-Path
 $cw = Join-Path $env:USERPROFILE ".local\bin\credwatch.exe"
 if (-not (Test-Path $cw)) {
