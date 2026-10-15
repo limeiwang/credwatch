@@ -51,7 +51,15 @@ def load_config() -> dict:
     if not CONFIG.exists():
         HOME.mkdir(parents=True, exist_ok=True)
         CONFIG.write_text(DEFAULT_CONFIG, encoding="utf-8")
-    return tomllib.loads(CONFIG.read_text(encoding="utf-8"))
+    raw = CONFIG.read_bytes()
+    try:
+        text = raw.decode("utf-8-sig")  # 兼容记事本带 BOM 保存
+    except UnicodeDecodeError:
+        text = raw.decode("gbk", errors="replace")  # 记事本另存为 ANSI 时
+    try:
+        return tomllib.loads(text)
+    except tomllib.TOMLDecodeError as e:
+        raise SystemExit(f"配置文件格式有误：{CONFIG}\n  {e}\n  常见原因：引号用了中文“”、或 [[custom]] 段缺了 name。")
 
 
 def _adapter(cred: Credential):
