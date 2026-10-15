@@ -4,6 +4,13 @@
 
 零依赖，Python 3.11+。
 
+## Windows 一键安装
+在 PowerShell 里粘贴：
+```powershell
+irm https://raw.githubusercontent.com/limeiwang/credwatch/main/install.ps1 | iex
+```
+自动完成：检查/安装 Python、安装 credwatch、生成配置、接入 Claude Code（MCP + 状态栏）、每 30 分钟后台巡检（不弹窗）。
+
 ## 安装
 ```bash
 pip install .          # 或：pipx install .
