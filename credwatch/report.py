@@ -35,7 +35,10 @@ def headline(creds: list[Credential]) -> str:
     if not bad and not soon:
         auto = sum(1 for c in creds if c.auto_renewable)
         tail = f"，其中 {auto} 项自动续期中" if auto else ""
-        return f"✅ {len(creds)} 项授权都正常{tail}" + (f"（{len(unk)} 项暂时无法确认）" if unk else "")
+        ok_n = len(creds) - len(unk)
+        if ok_n == 0:
+            return f"⚪ {len(unk)} 项暂时无法确认（多半是网络问题，不一定是过期）"
+        return f"✅ {ok_n} 项授权都正常{tail}" + (f"（另有 {len(unk)} 项暂时无法确认）" if unk else "")
     parts = []
     if bad:
         parts.append(f"🔴 {len(bad)} 项已失效")
