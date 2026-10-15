@@ -29,10 +29,10 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: One-liner (irm | iex) exactly as users run it
+      - name: One-liner exactly as users paste it (downloads from main)
         shell: powershell
         run: |
-          irm https://raw.githubusercontent.com/limeiwang/credwatch/main/install.ps1 | iex
+          irm https://raw.githubusercontent.com/limeiwang/credwatch/main/install.ps1 -OutFile $env:TEMP\credwatch-install.ps1; powershell -ExecutionPolicy Bypass -File $env:TEMP\credwatch-install.ps1
           if (-not (Test-Path "$env:USERPROFILE\.local\bin\credwatch.exe")) { throw "one-liner failed" }
       - name: Run installer from file (re-run must be safe)
         shell: powershell
