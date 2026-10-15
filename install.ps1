@@ -1,6 +1,6 @@
 ﻿# credwatch Windows 一键安装
 # 用法（PowerShell 里粘贴这一行）：
-#   irm https://raw.githubusercontent.com/limeiwang/credwatch/main/install.ps1 | iex
+#   irm https://raw.githubusercontent.com/limeiwang/credwatch/main/install.ps1 -OutFile $env:TEMP\credwatch-install.ps1; powershell -ExecutionPolicy Bypass -File $env:TEMP\credwatch-install.ps1
 $ErrorActionPreference = "Continue"  # 原生命令写 stderr 不中断；关键步骤自己检查
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 $env:PYTHONUTF8 = "1"
