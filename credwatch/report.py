@@ -37,7 +37,7 @@ def _reminder_line(c: Credential) -> str:
     d = c.to_dict()
     icon = {"expired": "🔴", "expiring": "🟡"}.get(c.status, "⏰")
     when = c.expires_at.astimezone().strftime("%Y-%m-%d") if c.expires_at else "未设日期"
-    left = "已到期" if c.status == "expired" else (f"还有 {max(0, c.remaining.days)} 天" if c.expires_at else "")
+    left = "已到期" if c.status == "expired" else (f"还有 {max(0, -(-int(c.remaining.total_seconds()) // 86400))} 天" if c.expires_at else "")
     tail = f"  → {c.renew_hint}" if c.renew_hint and c.status in ("expired", "expiring") else ""
     return f"  {icon} {c.name}：{when} {left}{tail}"
 
@@ -86,12 +86,12 @@ def statusline(creds: list[dict]) -> str:
 
 def terminal(creds: list[Credential]) -> str:
     if not creds:
-        return "没有发现任何 CLI 授权。可在 ~/.credwatch/config.toml 添加 [[custom]] 条目。"
+        return "没有发现任何 CLI 授权。运行 credwatch setup，跟着提示一步步设置。"
     rems = [c for c in creds if is_reminder(c)]
     creds = [c for c in creds if not is_reminder(c)]
     rem_block = (["", "⏰ 你设的提醒（只按日期提醒，不会去验证密钥）："] + [_reminder_line(c) for c in rems]) if rems else []
     if not creds:
-        return "\n".join([headline(rems), "（gh / wrangler 都还没登录，登录后会自动出现在这里）"] + rem_block)
+        return "\n".join([headline(rems), "（gh / wrangler 都还没登录。运行 credwatch setup 可以一步登录）"] + rem_block)
     rows = []
     for c in creds:
         d = c.to_dict()
