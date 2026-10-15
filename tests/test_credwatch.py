@@ -29,7 +29,7 @@ os.environ["CREDWATCH_GITHUB_API"] = f"http://127.0.0.1:{srv.server_port}"
 
 # 假 gh 与 wrangler
 BIN = TMP / "bin"; BIN.mkdir()
-(BIN / "gh").write_text("#!/bin/sh\nif [ \"$2\" = status ]; then echo 'github.com'; echo '  ✓ Logged in to github.com account meiwang'; exit 0; fi\nif [ -n \"$FAKE_KEYCHAIN_FAIL\" ]; then exit 1; fi\necho gho_valid\n")
+(BIN / "gh").write_text("#!/bin/sh\nif [ \"$1\" = api ]; then printf 'HTTP/2.0 200 OK\\r\\nX-Oauth-Scopes: repo, gist\\r\\n\\r\\n{\"login\":\"viagh\"}'; exit 0; fi\nif [ \"$2\" = status ]; then echo 'github.com'; echo '  ✓ Logged in to github.com account meiwang'; exit 0; fi\nif [ -n \"$FAKE_KEYCHAIN_FAIL\" ]; then exit 1; fi\necho gho_valid\n")
 (BIN / "wrangler").write_text(f"#!/bin/sh\npython3 -c \"import pathlib,datetime as d;p=pathlib.Path('{TMP}/user/.config/.wrangler/config/default.toml');t=(d.datetime.now(d.timezone.utc)+d.timedelta(hours=1)).isoformat();p.write_text('oauth_token=\\\"new\\\"\\nrefresh_token=\\\"r\\\"\\nexpiration_time=\\\"'+t+'\\\"\\n')\"\necho 'You are logged in'\n")
 for f in BIN.iterdir(): f.chmod(f.stat().st_mode | stat.S_IEXEC)
 os.environ["PATH"] = f"{BIN}:{os.environ['PATH']}"
@@ -102,6 +102,15 @@ class T(unittest.TestCase):
         finally:
             os.environ.pop("FAKE_KEYCHAIN_FAIL")
         self.assertEqual(c.status, "unknown")  # 已登录但读钥匙串失败 → 不误报过期
+
+    def test_python_network_blocked_falls_back_to_gh(self):
+        from credwatch.adapters import github as gha
+        old = gha.API; gha.API = "http://127.0.0.1:9"  # 模拟 Python 直连 GitHub 超时（国内网络常见）
+        try:
+            c = by(engine.check_all(), "gh CLI (github.com)")
+        finally:
+            gha.API = old
+        self.assertEqual((c.status, c.account, c.scopes), (OK, "viagh", ["repo", "gist"]))
 
     def test_preflight(self):
         os.environ["GITHUB_TOKEN"] = "ghp_expiring"  # 剩 3 天
