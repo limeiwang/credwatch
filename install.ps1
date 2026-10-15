@@ -1,4 +1,4 @@
-# credwatch Windows 一键安装
+﻿# credwatch Windows 一键安装
 # 用法（PowerShell 里粘贴这一行）：
 #   irm https://raw.githubusercontent.com/limeiwang/credwatch/main/install.ps1 | iex
 $ErrorActionPreference = "Continue"  # 原生命令写 stderr 不中断；关键步骤自己检查
