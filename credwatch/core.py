@@ -139,10 +139,13 @@ def is_headless() -> bool:
 
 def run(cmd: list[str], timeout: int = 30, env: Optional[dict] = None) -> tuple[int, str, str]:
     """执行命令，命令不存在时返回 127。"""
-    if not shutil.which(cmd[0]):
+    exe = shutil.which(cmd[0])
+    if not exe:
         return 127, "", f"{cmd[0]}: command not found"
+    cmd = [exe, *cmd[1:]]  # Windows 上 npm 装的 wrangler/npx 是 .cmd，需用完整路径
     try:
-        p = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout,
+        p = subprocess.run(cmd, capture_output=True, text=True, encoding="utf-8", errors="replace",
+                           timeout=timeout,
                            env={**os.environ, **(env or {})}, stdin=subprocess.DEVNULL)
         return p.returncode, p.stdout, p.stderr
     except subprocess.TimeoutExpired:
