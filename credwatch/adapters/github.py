@@ -61,6 +61,38 @@ def inspect_token(token: str, name: str, renew_hint: str, auto: bool = False) ->
     return cred
 
 
+def _inspect_via_gh(host: str, name: str, hint: str):
+    """用 `gh api -i user` 兜底：拿到状态码和响应头，结论与 inspect_token 一致。"""
+    code, out, _ = run(["gh", "api", "-i", "user", "--hostname", host], timeout=30,
+                       env={"GH_TOKEN": "", "GITHUB_TOKEN": "", "GH_ENTERPRISE_TOKEN": ""})
+    m = re.match(r"HTTP/[\d.]+ (\d{3})", out)
+    if not m:
+        return None
+    status = int(m.group(1))
+    head, _, body = out.replace("\r\n", "\n").partition("\n\n")
+    hdrs = {}
+    for line in head.splitlines()[1:]:
+        k, _, v = line.partition(":")
+        hdrs[k.strip().lower()] = v.strip()
+    cred = Credential(platform="github", name=name, kind="OAuth (gh CLI)", renew_hint=hint)
+    if status == 401:
+        cred.status, cred.detail = EXPIRED, "令牌已失效或被撤销（401）"
+        return cred
+    if status != 200:
+        return None
+    cred.status = OK
+    try:
+        import json
+        cred.account = json.loads(body).get("login", "")
+    except Exception:
+        pass
+    cred.scopes = [x.strip() for x in hdrs.get("x-oauth-scopes", "").split(",") if x.strip()]
+    cred.expires_at = parse_time(hdrs.get("github-authentication-token-expiration"))
+    if cred.expires_at is None:
+        cred.detail = "该令牌未设置过期时间"
+    return cred
+
+
 def check() -> list[Credential]:
     creds: list[Credential] = []
 
@@ -94,7 +126,10 @@ def check() -> list[Credential]:
                     creds.append(Credential(platform="github", name=name, status=MISSING,
                                             renew_hint=hint, detail="gh 未登录"))
                 continue
-            creds.append(inspect_token(tok, name, hint))
+            cred = inspect_token(tok, name, hint)
+            if cred.status == UNKNOWN and cred.detail.startswith("连不上"):
+                cred = _inspect_via_gh(host, name, hint) or cred  # gh 自己会走代理，常常比 Python 直连更稳
+            creds.append(cred)
 
     # 2) 环境变量里的令牌（agent 最常用的方式）
     for var in ("GITHUB_TOKEN", "GH_TOKEN"):
