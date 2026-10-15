@@ -29,7 +29,7 @@ os.environ["CREDWATCH_GITHUB_API"] = f"http://127.0.0.1:{srv.server_port}"
 
 # 假 gh 与 wrangler
 BIN = TMP / "bin"; BIN.mkdir()
-(BIN / "gh").write_text("#!/bin/sh\nif [ \"$2\" = status ]; then echo 'github.com'; echo '  ✓ Logged in'; exit 0; fi\nif [ -n \"$FAKE_KEYCHAIN_FAIL\" ]; then exit 1; fi\necho gho_valid\n")
+(BIN / "gh").write_text("#!/bin/sh\nif [ \"$2\" = status ]; then echo 'github.com'; echo '  ✓ Logged in to github.com account meiwang'; exit 0; fi\nif [ -n \"$FAKE_KEYCHAIN_FAIL\" ]; then exit 1; fi\necho gho_valid\n")
 (BIN / "wrangler").write_text(f"#!/bin/sh\npython3 -c \"import pathlib,datetime as d;p=pathlib.Path('{TMP}/user/.config/.wrangler/config/default.toml');t=(d.datetime.now(d.timezone.utc)+d.timedelta(hours=1)).isoformat();p.write_text('oauth_token=\\\"new\\\"\\nrefresh_token=\\\"r\\\"\\nexpiration_time=\\\"'+t+'\\\"\\n')\"\necho 'You are logged in'\n")
 for f in BIN.iterdir(): f.chmod(f.stat().st_mode | stat.S_IEXEC)
 os.environ["PATH"] = f"{BIN}:{os.environ['PATH']}"
