@@ -71,7 +71,8 @@ def check() -> list[Credential]:
         pass  # 没装 gh，跳过
     else:
         hosts = re.findall(r"^\s*([\w.-]+\.[\w.-]+)\s*$", text, re.M) or ["github.com"]
-        logged_in = "logged in" in text.lower()
+        low = text.lower()
+        logged_in = "logged in to" in low and "not logged" not in low
         for host in dict.fromkeys(hosts):
             name = f"gh CLI ({host})"
             hint = f"gh auth login --hostname {host}"
