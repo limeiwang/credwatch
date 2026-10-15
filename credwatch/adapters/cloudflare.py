@@ -41,6 +41,15 @@ def wrangler_config_paths() -> list[Path]:
     return paths
 
 
+LABEL = "Cloudflare"
+TOOL = "wrangler"
+INSTALL_HINT = "npm install -g wrangler"
+
+
+def login_cmd() -> list[str]:
+    return wrangler_cmd() + ["login"]
+
+
 def wrangler_cmd() -> list[str]:
     if shutil.which("wrangler"):
         return ["wrangler"]
