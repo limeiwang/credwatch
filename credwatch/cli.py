@@ -45,6 +45,13 @@ def main(argv=None) -> int:
     dr.add_argument("--fix", action="store_true", help="自动修复能修的项")
     sub.add_parser("statusline", help="输出一行状态，给 Claude Code 状态栏 / shell 提示符用")
     sub.add_parser("mcp", help="以 MCP 服务器方式运行（给 Claude Code / Cursor 用）")
+    sub.add_parser("setup", help="傻瓜式设置向导：登录、手机提醒、到期提醒，一步步问")
+    ad = sub.add_parser("add", help="加一条到期提醒，如：credwatch add \"OpenAI API Key\" 2026-12-31")
+    ad.add_argument("name", nargs="?")
+    ad.add_argument("date", nargs="?", help="2026-12-31，或 90 表示 90 天后")
+    ad.add_argument("--renew", default="", help="到时候怎么续（可选）")
+    rm = sub.add_parser("remove", help="删掉一条到期提醒")
+    rm.add_argument("name")
     sub.add_parser("init", help="生成默认配置文件")
     sub.add_parser("test-notify", help="发送一条测试告警")
 
@@ -55,6 +62,26 @@ def main(argv=None) -> int:
         engine.load_config()
         print(f"配置文件：{engine.CONFIG}")
         return 0
+
+    if cmd == "setup":
+        from .wizard import run as wizard
+        return wizard()
+
+    if cmd == "add":
+        from .wizard import add_reminder, ask, parse_date
+        name = a.name or ask("叫什么（如 OpenAI API Key）：")
+        when = parse_date(a.date or ask("哪天到期（如 2026-12-31，或 90 表示 90 天后）："))
+        if not name or when is None:
+            print("没看懂。示例：credwatch add \"OpenAI API Key\" 2026-12-31")
+            return 2
+        add_reminder(name, when, a.renew)
+        return 0
+
+    if cmd == "remove":
+        from . import configfile
+        n = configfile.remove_custom(a.name)
+        print(f"✅ 已删除 {a.name}" if n else f"没找到叫 {a.name} 的提醒")
+        return 0 if n else 1
 
     if cmd == "mcp":
         from .mcp_server import serve
@@ -140,13 +167,9 @@ def main(argv=None) -> int:
         return 0
 
     if cmd == "test-notify":
-        from . import notify
-        from .core import EXPIRING, Credential, now
-        import datetime as dt
-        demo = Credential(platform="demo", name="测试凭证", account="you", status=EXPIRING,
-                          expires_at=now() + dt.timedelta(days=2), renew_hint="credwatch renew")
-        res = notify.send(engine.load_config().get("notify", {}), [demo], [])
-        print("\n".join(res) or "未配置任何通知渠道，请编辑 " + str(engine.CONFIG))
+        from .wizard import send_test
+        res = send_test()
+        print("\n".join(res) or "没有可用的提醒渠道，运行 credwatch setup 接入飞书等")
         return 0
 
     if cmd == "watch":
