@@ -125,8 +125,12 @@ $vbs = Join-Path $home_ "run-hidden.vbs"
 schtasks /create /f /tn "credwatch" /sc minute /mo 30 /tr "wscript.exe `"$vbs`"" | Out-Null
 Ok "计划任务 credwatch 已创建（任务计划程序里可以看到）"
 
-# ---------- 6. 看一眼 ----------
-Step 6 "当前授权状态"
-& $cw
-Write-Host "`n全部完成。常用：credwatch dashboard --open（网页看板）、credwatch preflight --for 3h、credwatch doctor --fix" -ForegroundColor Green
-Write-Host "要接收飞书/钉钉提醒：用记事本打开 $home_\config.toml 填 webhook，再运行 credwatch test-notify" -ForegroundColor Green
+# ---------- 6. 设置向导 ----------
+if ($env:CI -or -not [Environment]::UserInteractive -or [Console]::IsInputRedirected) {
+    Step 6 "当前授权状态"
+    & $cw
+} else {
+    Step 6 "设置向导（每一步都能直接回车跳过）"
+    & $cw setup
+}
+Write-Host "`n全部完成。电脑弹窗提醒已默认开启；以后想改设置，运行：credwatch setup" -ForegroundColor Green
