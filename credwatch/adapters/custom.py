@@ -16,8 +16,11 @@ from ..core import EXPIRED, OK, UNKNOWN, Credential, parse_time, run
 
 
 def check(items: list[dict]) -> list[Credential]:
-    creds = []
-    for it in items:
+    creds, seen = [], set()
+    for it in reversed(items):  # 同名条目只算最后一条，手抖粘贴两遍也不会重复显示
+        if it.get("name") in seen:
+            continue
+        seen.add(it.get("name"))
         cred = Credential(platform=it.get("platform", "custom"), name=it["name"],
                           kind=it.get("kind", "custom" if it.get("check") else "reminder"), renew_hint=it.get("renew", ""),
                           auto_renewable=bool(it.get("auto")) and bool(it.get("renew")),
@@ -34,7 +37,7 @@ def check(items: list[dict]) -> list[Credential]:
         else:
             cred.status = OK if cred.expires_at else UNKNOWN
         creds.append(cred)
-    return creds
+    return creds[::-1]
 
 
 def renew(cred: Credential) -> tuple[bool, str]:
