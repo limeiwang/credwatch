@@ -9,7 +9,10 @@
 ```powershell
 irm https://raw.githubusercontent.com/limeiwang/credwatch/main/install.ps1 -OutFile $env:TEMP\credwatch-install.ps1; powershell -NoProfile -ExecutionPolicy Bypass -File $env:TEMP\credwatch-install.ps1
 ```
-自动完成：检查/安装 Python、安装 credwatch、生成配置、接入 Claude Code（MCP + 状态栏）、每 30 分钟后台巡检（不弹窗）。
+自动完成：检查/安装 Python、安装 credwatch、接入 Claude Code（MCP + 状态栏）、每 30 分钟后台巡检，最后自动打开设置向导。
+
+**零配置**：装完就能用，自动发现已登录的 CLI，快到期时弹电脑系统通知（Windows / macOS / Linux 桌面）。
+**想多要一点**：运行 `credwatch setup`，一步步问你要不要登录、要不要推到飞书/企业微信/钉钉（粘贴地址自动测试）、要不要加 API Key 到期提醒。全程不用手改配置文件。
 
 ## 安装
 ```bash
@@ -28,6 +31,9 @@ credwatch              # 查看状态
 
 ## 常用命令
 ```bash
+credwatch setup             # 设置向导（登录 / 推送到手机 / 到期提醒），随时可重跑
+credwatch add "OpenAI API Key" 2026-12-31   # 加一条到期提醒（也可填 90 表示 90 天后）
+credwatch remove "OpenAI API Key"           # 删掉提醒
 credwatch status            # 终端看板；--json 给脚本/agent 用
 credwatch renew             # 续期所有可自动续期的凭证
 credwatch renew "wrangler CLI"
@@ -45,7 +51,7 @@ credwatch init              # 生成 ~/.credwatch/config.toml
 `status` 有失效/未登录时退出码为 1，可直接放进 CI 或 agent 的前置检查。
 
 ## 告警渠道
-编辑 `~/.credwatch/config.toml`，填飞书、钉钉、企业微信、Slack、Telegram 或通用 webhook 中任意一个。阶梯提醒：剩 7 天、3 天、1 天各提醒一次，已失效的每 24 小时提醒一次，不刷屏。
+默认开启电脑系统通知。手机推送运行 `credwatch setup` 选择飞书、企业微信、钉钉、Telegram、Slack 或通用 webhook。新增渠道只需在 `notify.CHANNELS` 加一项，向导自动出现该选项；新增平台在 adapter 里声明 `LABEL / TOOL / login_cmd()`，向导自动支持登录。阶梯提醒：剩 7 天、3 天、1 天各提醒一次，已失效的每 24 小时提醒一次，不刷屏。
 
 ## 像 Token 余量一样常驻显示
 Claude Code 的 `~/.claude/settings.json`：
