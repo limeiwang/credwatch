@@ -1,0 +1,67 @@
+<!doctype html><html lang="zh"><head><meta charset="utf-8">
+<meta http-equiv="refresh" content="300"><title>credwatch 凭证看板</title>
+<style>
+body{font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;background:#f5f5f4;margin:0;padding:32px;color:#1c1917}
+h1{margin:0 0 4px;font-size:22px} .head{font-size:16px;margin:8px 0 4px} .sub{color:#78716c;margin-bottom:24px;font-size:13px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.card{background:#fff;border-radius:14px;padding:18px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+.top{display:flex;align-items:center;gap:8px} .dot{width:10px;height:10px;border-radius:50%}
+.tag{margin-left:auto;font-size:12px;color:#57534e} .acct{color:#78716c;font-size:13px;margin:6px 0 12px}
+.bar{height:8px;background:#e7e5e4;border-radius:4px;overflow:hidden} .bar div{height:100%}
+.rem{font-size:15px;margin-top:10px;font-weight:600} .meta{font-size:12px;color:#57534e;margin-top:6px}
+code{display:block;background:#f5f5f4;padding:6px 8px;border-radius:6px;margin-top:8px;font-size:12px;word-break:break-all}
+.detail{font-size:12px;color:#a8a29e;margin-top:6px;word-break:break-all}
+</style></head><body><h1>🔐 凭证看板</h1>
+<div class="head">🔴 1 项已失效，🟡 1 项将过期（最早：OpenAI Key，剩 2天3小时）</div>
+<div class="sub">最后检查 2026-10-15 03:39:34 · 进度条以 30 天为满格 · 每 5 分钟自动刷新页面</div>
+<div class="grid">
+<div class="card">
+  <div class="top"><span class="dot" style="background:#dc2626"></span>
+    <b>环境变量 GITHUB_TOKEN</b><span class="tag">已失效</span></div>
+  <div class="acct">meiwang · fine-grained PAT</div>
+  <div class="bar"><div style="width:0%;background:#dc2626"></div></div>
+  <div class="rem">已过 3小时0分 · 到期 2026-10-15 00:39</div>
+  <div class="meta">🙋 需人工续期</div>
+  <code>到 https://github.com/settings/tokens 重新生成后更新该环境变量</code>
+  <div class="detail">令牌已失效或被撤销 (401)</div>
+</div>
+<div class="card">
+  <div class="top"><span class="dot" style="background:#d97706"></span>
+    <b>OpenAI Key</b><span class="tag">将过期</span></div>
+  <div class="acct">未知账号 · custom</div>
+  <div class="bar"><div style="width:7%;background:#d97706"></div></div>
+  <div class="rem">2天3小时 · 到期 2026-10-17 07:39</div>
+  <div class="meta">🙋 需人工续期</div>
+  <code>到控制台轮换后更新 .env</code>
+  
+</div>
+<div class="card">
+  <div class="top"><span class="dot" style="background:#16a34a"></span>
+    <b>wrangler CLI</b><span class="tag">正常</span></div>
+  <div class="acct">meiwang@cf · OAuth</div>
+  <div class="bar"><div style="width:100%;background:#16a34a"></div></div>
+  <div class="rem">自动续期中</div>
+  <div class="meta">🤖 可自动续期</div>
+  
+  <div class="detail">access token 有效，refresh_token 可自动续</div>
+</div>
+<div class="card">
+  <div class="top"><span class="dot" style="background:#16a34a"></span>
+    <b>环境变量 CLOUDFLARE_API_TOKEN</b><span class="tag">正常</span></div>
+  <div class="acct">未知账号 · API Token</div>
+  <div class="bar"><div style="width:70%;background:#16a34a"></div></div>
+  <div class="rem">20天23小时 · 到期 2026-11-05 03:39</div>
+  <div class="meta">🙋 需人工续期</div>
+  
+  
+</div>
+<div class="card">
+  <div class="top"><span class="dot" style="background:#16a34a"></span>
+    <b>gh CLI (github.com)</b><span class="tag">正常</span></div>
+  <div class="acct">meiwang · OAuth (gh CLI)</div>
+  <div class="bar"><div style="width:100%;background:#16a34a"></div></div>
+  <div class="rem">不过期</div>
+  <div class="meta">🙋 需人工续期</div>
+  
+  <div class="detail">该令牌未设置过期时间</div>
+</div></div></body></html>
